@@ -1,6 +1,6 @@
 # backend/api.py
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 import yfinance as yf
 import os
 import json
@@ -31,9 +31,9 @@ def search_symbol(query: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/historical-data/{ticker}")
-def get_historical_data(ticker: str):
+def get_historical_data(ticker: str, period: str = Query("1y", pattern="^(1d|5d|1mo|3mo|6mo|1y|2y|5y|10y|ytd|max)$")):
     try:
-        data = yf.download(ticker, period="1y")
+        data = yf.download(ticker, period=period)
         if data.empty:
             raise HTTPException(status_code=404, detail="No data found for ticker")
         
@@ -50,7 +50,7 @@ def buy_stock(ticker: str, quantity: int):
     if data.empty:
         raise HTTPException(status_code=404, detail="Ticker not found")
 
-    current_price = data['Close'][-1]
+    current_price = data['Close'].iloc[-1]  # Use .iloc for position-based indexing
     total_cost = current_price * quantity
 
     if total_cost > start_capital:
@@ -71,7 +71,7 @@ def sell_stock(ticker: str, quantity: int):
         raise HTTPException(status_code=400, detail="Insufficient shares")
 
     data = yf.download(ticker)
-    current_price = data['Close'][-1]
+    current_price = data['Close'].iloc[-1]  # Use .iloc for position-based indexing
     total_revenue = current_price * quantity
 
     start_capital += total_revenue
