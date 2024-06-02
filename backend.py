@@ -1,4 +1,4 @@
-# backend/api.py
+# main.py
 
 from fastapi import FastAPI, HTTPException, Query
 import yfinance as yf
@@ -19,6 +19,7 @@ portfolio = {}
 if not os.path.exists('data'):
     os.makedirs('data')
 
+
 @app.get("/search/{query}")
 def search_symbol(query: str):
     try:
@@ -29,6 +30,7 @@ def search_symbol(query: str):
         return {"symbol": result.get("symbol"), "name": result.get("shortName")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/historical-data/{ticker}")
 def get_historical_data(ticker: str, period: str = Query("1y", pattern="^(1d|5d|1mo|3mo|6mo|1y|2y|5y|10y|ytd|max)$")):
@@ -43,6 +45,7 @@ def get_historical_data(ticker: str, period: str = Query("1y", pattern="^(1d|5d|
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/buy")
 def buy_stock(ticker: str, quantity: int):
     global start_capital, portfolio
@@ -50,7 +53,7 @@ def buy_stock(ticker: str, quantity: int):
     if data.empty:
         raise HTTPException(status_code=404, detail="Ticker not found")
 
-    current_price = data['Close'].iloc[-1]  # Use .iloc for position-based indexing
+    current_price = data['Close'].iloc[-1]
     total_cost = current_price * quantity
 
     if total_cost > start_capital:
@@ -64,6 +67,7 @@ def buy_stock(ticker: str, quantity: int):
 
     return {"message": f"Bought {quantity} shares of {ticker}", "remaining_capital": start_capital}
 
+
 @app.post("/sell")
 def sell_stock(ticker: str, quantity: int):
     global start_capital, portfolio
@@ -71,7 +75,7 @@ def sell_stock(ticker: str, quantity: int):
         raise HTTPException(status_code=400, detail="Insufficient shares")
 
     data = yf.download(ticker)
-    current_price = data['Close'].iloc[-1]  # Use .iloc for position-based indexing
+    current_price = data['Close'].iloc[-1]
     total_revenue = current_price * quantity
 
     start_capital += total_revenue
@@ -82,9 +86,44 @@ def sell_stock(ticker: str, quantity: int):
 
     return {"message": f"Sold {quantity} shares of {ticker}", "remaining_capital": start_capital}
 
+
 @app.get("/portfolio")
 def get_portfolio():
     return {"portfolio": portfolio, "remaining_capital": start_capital}
+
+
+@app.get("/current-price/{ticker}")
+def get_current_price(ticker: str):
+    try:
+        data = yf.download(ticker, period="1d", interval="1m")
+        if data.empty:
+            raise HTTPException(status_code=404, detail="Ticker not found")
+        current_price = data['Close'].iloc[-1]
+        return {"ticker": ticker, "current_price": current_price}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/portfolio-value")
+def get_portfolio_value():
+    try:
+        tickers = list(portfolio.keys())
+        if not tickers:
+            return {"total_value": 0}
+
+        total_value = 0
+
+        for ticker in tickers:
+            data = yf.download(ticker, period="1d", interval="1m")
+            if data.empty:
+                raise HTTPException(status_code=404, detail=f"Ticker {ticker} not found")
+            current_price = data['Close'].iloc[-1]
+            total_value += current_price * portfolio[ticker]
+
+        return {"total_value": total_value}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,4 +1,4 @@
-# frontend/gui.py
+# trading_simulator.py
 
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -7,7 +7,7 @@ import json
 import matplotlib.pyplot as plt
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class TradingSimulator(tk.Tk):
     def __init__(self):
@@ -17,6 +17,7 @@ class TradingSimulator(tk.Tk):
         self.configure(bg="lightgrey")
 
         self.remaining_capital = self.load_start_capital()
+        self.portfolio_value = 0  # Set initial portfolio value to 0
 
         # Create a canvas to add scrollbars
         self.canvas = tk.Canvas(self, bg="lightgrey")
@@ -32,18 +33,34 @@ class TradingSimulator(tk.Tk):
         self.canvas.create_window((0, 0), window=self.frame, anchor="nw")
 
         self.create_widgets()
-        self.plot_portfolio({"portfolio": {}, "remaining_capital": self.remaining_capital})  # Plot default portfolio with value 0
+        self.plot_portfolio({"portfolio": {}, "remaining_capital": self.remaining_capital})
+
+        # Start the periodic update of portfolio value
+        self.previous_portfolio_value = 0
+        self.update_portfolio_value()
 
     def create_widgets(self):
-        self.label = tk.Label(self.frame, text="Enter Company Name or Ticker Symbol:", bg="lightgrey", font=("Arial", 12))
+        self.label = tk.Label(self.frame, text="Enter stock symbol (f.e. AAPL) or cryptocurrency symbol (BTC-USD):", bg="lightgrey", font=("Arial", 12))
         self.label.pack(pady=10)
 
         self.query_entry = tk.Entry(self.frame, font=("Arial", 12))
         self.query_entry.pack(pady=10)
         self.query_entry.bind("<Return>", lambda event: self.get_historical_data())
 
-        self.search_button = tk.Button(self.frame, text="Search Symbol", command=self.search_symbol, font=("Arial", 12), bg="white")
-        self.search_button.pack(pady=10)
+        self.search_frame = tk.Frame(self.frame, bg="lightgrey")
+        self.search_frame.pack(pady=10)
+
+        self.search_button = tk.Button(self.search_frame, text="Search Symbol", command=self.search_symbol, font=("Arial", 12), bg="white")
+        self.search_button.pack(side=tk.LEFT, padx=5)
+
+        self.time_period_label = tk.Label(self.search_frame, text="Select Time Period:", bg="lightgrey", font=("Arial", 12))
+        self.time_period_label.pack(side=tk.LEFT, padx=5)
+
+        self.valid_periods = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
+        self.time_period_var = tk.StringVar(value="1y")
+        self.time_period_menu = tk.OptionMenu(self.search_frame, self.time_period_var, *self.valid_periods, command=self.on_period_change)
+        self.time_period_menu.config(font=("Arial", 12))
+        self.time_period_menu.pack(side=tk.LEFT, padx=5)
 
         self.plot_frame = tk.Frame(self.frame, bg="lightgrey")
         self.plot_frame.pack(pady=20)
@@ -54,26 +71,29 @@ class TradingSimulator(tk.Tk):
         self.quantity_entry = tk.Entry(self.frame, font=("Arial", 12))
         self.quantity_entry.pack(pady=10)
 
-        self.buy_button = tk.Button(self.frame, text="Buy", command=self.buy_stock, font=("Arial", 12), bg="white")
-        self.buy_button.pack(pady=10)
+        self.transaction_frame = tk.Frame(self.frame, bg="lightgrey")
+        self.transaction_frame.pack(pady=10)
 
-        self.sell_button = tk.Button(self.frame, text="Sell", command=self.sell_stock, font=("Arial", 12), bg="white")
-        self.sell_button.pack(pady=10)
+        self.buy_button = tk.Button(self.transaction_frame, text="Buy", command=self.buy_stock, font=("Arial", 12), bg="white")
+        self.buy_button.pack(side=tk.LEFT, padx=5)
 
-        self.time_period_label = tk.Label(self.frame, text="Select Time Period:", bg="lightgrey", font=("Arial", 12))
-        self.time_period_label.pack(pady=10)
-
-        self.valid_periods = ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
-        self.time_period_var = tk.StringVar(value="1y")
-        self.time_period_menu = tk.OptionMenu(self.frame, self.time_period_var, *self.valid_periods, command=self.on_period_change)
-        self.time_period_menu.config(font=("Arial", 12))
-        self.time_period_menu.pack(pady=10)
+        self.sell_button = tk.Button(self.transaction_frame, text="Sell", command=self.sell_stock, font=("Arial", 12), bg="white")
+        self.sell_button.pack(side=tk.LEFT, padx=5)
 
         self.portfolio_plot_frame = tk.Frame(self.frame, bg="lightgrey")
         self.portfolio_plot_frame.pack(pady=20)
 
         self.capital_label = tk.Label(self.frame, text=f"Remaining Capital: ${self.remaining_capital:.2f}", bg="lightgrey", font=("Arial", 12))
         self.capital_label.pack(pady=10)
+
+        self.portfolio_value_frame = tk.Frame(self.frame, bg="lightgrey")
+        self.portfolio_value_frame.pack(pady=10)
+
+        self.portfolio_value_label = tk.Label(self.portfolio_value_frame, text=f"Portfolio Value: $0.00", bg="lightgrey", font=("Arial", 12))
+        self.portfolio_value_label.pack(side=tk.LEFT, padx=5)
+
+        self.portfolio_change_label = tk.Label(self.portfolio_value_frame, text="", bg="lightgrey", font=("Arial", 12))
+        self.portfolio_change_label.pack(side=tk.LEFT, padx=5)
 
     def load_start_capital(self):
         with open('config.json', 'r') as f:
@@ -173,7 +193,7 @@ class TradingSimulator(tk.Tk):
 
         fig, ax = plt.subplots(figsize=(10, 5))
 
-        if not tickers:  # No investments
+        if not tickers:
             ax.plot([datetime.now()], [0], label="Invested Value")
             ax.set_title("Total Invested Value Over Time")
             ax.set_xlabel("Date")
@@ -184,7 +204,7 @@ class TradingSimulator(tk.Tk):
             for ticker in tickers:
                 quantity = portfolio['portfolio'][ticker]
                 data = pd.read_csv(f"data/{ticker}.csv", index_col="Date", parse_dates=True)
-                current_price = data['Close'].iloc[-1]  # Use .iloc for position-based indexing
+                current_price = data['Close'].iloc[-1]
                 total_invested_value += current_price * quantity
 
             ax.plot(data.index, [total_invested_value] * len(data.index), label="Invested Value")
@@ -197,6 +217,24 @@ class TradingSimulator(tk.Tk):
         canvas = FigureCanvasTkAgg(fig, master=self.portfolio_plot_frame)
         canvas.draw()
         canvas.get_tk_widget().pack()
+
+    def update_portfolio_value(self):
+        response = requests.get(f"http://127.0.0.1:8000/portfolio-value")
+        if response.status_code == 200:
+            total_invested_value = response.json()['total_value']
+            self.portfolio_value_label.config(text=f"Portfolio Value: ${total_invested_value:.2f}")
+
+            change = total_invested_value - self.previous_portfolio_value
+            if change > 0:
+                self.portfolio_change_label.config(text=f"↑ ${change:.2f}", fg="green")
+            elif change < 0:
+                self.portfolio_change_label.config(text=f"↓ ${-change:.2f}", fg="red")
+            else:
+                self.portfolio_change_label.config(text="")
+
+            self.previous_portfolio_value = total_invested_value
+
+        self.after(60000, self.update_portfolio_value)  # Continue the periodic update every minute
 
 if __name__ == "__main__":
     app = TradingSimulator()
