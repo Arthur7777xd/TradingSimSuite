@@ -1,2 +1,7 @@
-yfinance           0.2.40
-yahooquery         2.3.7
+yfinance==0.2.40
+ttkthemes==3.2.2
+requests==2.32.2
+fastapi==0.111.0
+uvicorn==0.30.0
+matplotlib==3.9.0
+pandas==2.2.2
