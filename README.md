@@ -2,7 +2,7 @@
 ## Author: Arthur Simon, MNr: -
 
 # README for Trading Simulator Application
-Overview
+## Overview
 
 This application is a trading simulator that allows users to manage a financial portfolio through a graphical user interface (GUI) built with Tkinter. The backend of the application is powered by FastAPI, which handles requests to fetch stock data using the yfinance library and processes data with pandas.
 
@@ -30,7 +30,5 @@ The frontend is a Tkinter-based GUI that allows users to interact with their por
 
 The frontend interacts with the backend through HTTP requests to fetch data and perform transactions.
 Note
-
-There is no web crawler in the application. Initially, an API that required crawling was chosen, but it did not fit within the project's timeline, leading to a change in approach.
 
 The portfolio value is updated every minute because the API enables 1 Minute as minimum interval.

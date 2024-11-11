@@ -7,7 +7,7 @@ It uses `yfinance` to fetch financial data and `pandas` for data processing.
 Installation:
     pip install yfinance pandas
 
-Author: Arthur Simon, MNr: 9227155
+Author: Arthur Simon, MNr: -
 Date: 02.06.2024
 license: free
 version: 0.0.1 (master.major.minor)

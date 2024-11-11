@@ -6,7 +6,7 @@ This module provides utility functions for plotting historical data and portfoli
 Installation:
     pip install pandas matplotlib tkinter
 
-Author: Arthur Simon, MNr: 9227155
+Author: Arthur Simon, MNr: -
 Date: 02.06.2024
 license: free
 version: 0.0.1 (master.major.minor)
@@ -20,7 +20,7 @@ from tkinter import messagebox
 import datetime
 
 
-def plot_historical_data(ticker: str, period: str, plot_frame: tk.Frame) -> None:
+def plot_historical_data(ticker: str, plot_frame: tk.Frame) -> None:
     """
     Plot historical data for a given ticker and period.
 
@@ -93,7 +93,6 @@ def plot_portfolio(portfolio: dict, portfolio_plot_frame: tk.Frame, portfolio_va
             quantity = portfolio['portfolio'][ticker]
             data = pd.read_csv(f"data/{ticker}.csv", index_col="Date", parse_dates=True)
             current_price = data['Close'].iloc[-1]
-            total_invested_value = current_price * quantity
 
         if portfolio_value_history:
             times, values = zip(*portfolio_value_history)

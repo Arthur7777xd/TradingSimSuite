@@ -6,7 +6,7 @@ This module provides a trading simulator application with a graphical user inter
 Installation:
     pip install tkinter requests pandas matplotlib
 
-Author: Arthur Simon, MNr: 9227155
+Author: Arthur Simon, MNr: -
 Date: 02.06.2024
 license: free
 version: 0.0.1 (master.major.minor)
@@ -24,7 +24,33 @@ import json
 
 class TradingSimulator(tk.Tk):
     """
-    A GUI-based trading simulator application.
+    A GUI application framework for simulating trading activities.
+
+    Attributes:
+        remaining_capital (float): The user's available capital for trading.
+        portfolio_value (float): The total value of the user's portfolio.
+        portfolio_value_history (list): A list tracking the historical value of the portfolio.
+        canvas (tk.Canvas): Canvas for the main GUI layout.
+        scrollbar (ttk.Scrollbar): Vertical scrollbar for navigating the canvas content.
+        frame (tk.Frame): Frame containing GUI widgets for interacting with the trading simulator.
+        valid_periods (list): List of valid time periods for data analysis.
+        time_period_var (tk.StringVar): Stores the selected time period for historical data requests.
+
+    Methods:
+        _on_mouse_wheel(event): Handles mouse wheel scrolling for the canvas.
+        create_widgets(): Initializes and places widgets for user input and actions.
+        load_start_capital() -> float: Loads the initial trading capital from a configuration file.
+        load_initial_portfolio(): Fetches the initial portfolio data from the server.
+        search_symbol(): Searches for a stock or cryptocurrency symbol using the provided query.
+        get_historical_data(): Retrieves historical data for the specified stock or cryptocurrency symbol.
+        on_period_change(event): Updates data when the time period selection changes.
+        buy_stock(): Executes a purchase transaction for a specified stock or cryptocurrency quantity.
+        sell_stock(): Executes a sale transaction for a specified stock or cryptocurrency quantity.
+        update_portfolio(total_value: float, remaining_capital: float): Updates portfolio and capital display.
+        show_portfolio(): Retrieves and displays the latest portfolio from the server.
+        update_portfolio_value(): Periodically updates the total value of the portfolio.
+        update_portfolio_list(portfolio: dict): Updates the portfolio holdings displayed in the GUI.
+        uppercase_entry(event): Converts text in the query entry field to uppercase.
     """
 
     def __init__(self):
@@ -61,6 +87,7 @@ class TradingSimulator(tk.Tk):
         self.previous_portfolio_value = 0
         self.update_portfolio_value()
 
+
     def _on_mouse_wheel(self, event) -> None:
         """
         Handle mouse wheel scrolling.
@@ -76,6 +103,7 @@ class TradingSimulator(tk.Tk):
             2. Scroll with touchpad, canvas should scroll.
         """
         self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
 
     def create_widgets(self) -> None:
         """
@@ -213,6 +241,7 @@ class TradingSimulator(tk.Tk):
             config = json.load(f)
         return config['start_capital']
 
+
     def load_initial_portfolio(self) -> None:
         """
         Load the initial portfolio data from the server.
@@ -234,6 +263,7 @@ class TradingSimulator(tk.Tk):
             self.update_portfolio_list(portfolio['portfolio'])
         else:
             raise RuntimeError(response.json()['detail'])
+
 
     def search_symbol(self) -> None:
         """
@@ -261,6 +291,7 @@ class TradingSimulator(tk.Tk):
         else:
             raise RuntimeError(response.json()['detail'])
 
+
     def get_historical_data(self) -> None:
         """
         Fetch historical data for the specified ticker.
@@ -284,6 +315,7 @@ class TradingSimulator(tk.Tk):
         else:
             raise RuntimeError(response.json()['detail'])
 
+
     def on_period_change(self, event) -> None:
         """
         Handle the change in selected time period.
@@ -299,6 +331,7 @@ class TradingSimulator(tk.Tk):
             2. Verify no errors occur when changing the period.
         """
         self.get_historical_data()
+
 
     def buy_stock(self) -> None:
         """
@@ -332,6 +365,7 @@ class TradingSimulator(tk.Tk):
                 self.get_historical_data()
             raise RuntimeError(response.json()['detail'])
 
+
     def sell_stock(self) -> None:
         """
         Sell the specified quantity of stock.
@@ -362,6 +396,7 @@ class TradingSimulator(tk.Tk):
         else:
             raise RuntimeError(response.json()['detail'])
 
+
     def update_portfolio(self, total_value: float, remaining_capital: float) -> None:
         """
         Update the portfolio value and remaining capital.
@@ -381,6 +416,7 @@ class TradingSimulator(tk.Tk):
         self.capital_label.config(text=f"Remaining Capital: ${remaining_capital:.2f}")
         self.portfolio_value_history.append((datetime.now(), total_value))
         self.show_portfolio()
+
 
     def show_portfolio(self) -> None:
         """
@@ -403,6 +439,7 @@ class TradingSimulator(tk.Tk):
             self.update_portfolio_list(portfolio['portfolio'])
         else:
             raise RuntimeError(response.json()['detail'])
+
 
     def update_portfolio_value(self) -> None:
         """
@@ -441,6 +478,7 @@ class TradingSimulator(tk.Tk):
 
         self.after(60000, self.update_portfolio_value)
 
+
     def update_portfolio_list(self, portfolio: dict) -> None:
         """
         Update the portfolio list displayed in the GUI.
@@ -459,7 +497,8 @@ class TradingSimulator(tk.Tk):
         for ticker, quantity in portfolio.items():
             self.portfolio_listbox.insert(tk.END, f"{ticker}: {quantity} shares")
 
-    def uppercase_entry(self, event) -> None:
+
+    def uppercase_entry(self) -> None:
         """
         Convert the entry text to uppercase.
 
