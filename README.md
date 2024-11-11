@@ -1,5 +1,5 @@
 # Gruppe Trading Snake
-## Author: Arthur Simon, MNr: 9227155
+## Author: Arthur Simon, MNr: -
 
 # README for Trading Simulator Application
 Overview
