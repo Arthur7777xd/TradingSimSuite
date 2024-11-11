@@ -20,7 +20,7 @@ from tkinter import messagebox
 import datetime
 
 
-def plot_historical_data(ticker: str, plot_frame: tk.Frame) -> None:
+def plot_historical_data(ticker: str, period: str, plot_frame: tk.Frame) -> None:
     """
     Plot historical data for a given ticker and period.
 
